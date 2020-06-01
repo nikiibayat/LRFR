@@ -24,5 +24,6 @@ def main():
     gan.generator.load_weights('model/VGG_saved_model/vgg16to64.h5')
     upscale(gan, "GT.jpg")
 
+
 if __name__ == "__main__":
     main()
