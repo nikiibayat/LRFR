@@ -7,7 +7,7 @@ from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 import numpy as np
 from torch.utils.data import Dataset
-import scipy
+import scipy.misc
 
 
 class VGG_Dataset(Dataset):
@@ -27,12 +27,12 @@ def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
     print("Number of training samples in total: {}".format(len(samples)))
     print("Number of batches: {}".format(len(data_loader)))
-    lmdb_path = osp.join("./dataset", "%s.lmdb" % name)
+    lmdb_path = osp.join("/imaging/nbayat/VggFaceLmdb", "%s.lmdb" % name)
     isdir = os.path.isdir(lmdb_path)
 
     print("Generate LMDB to %s" % lmdb_path)
     db = lmdb.open(lmdb_path, subdir=isdir,
-                   map_size=10e+11, readonly=False,
+                   map_size=10e+12, readonly=False,
                    meminit=False, map_async=True)
 
     ii = 0
@@ -40,8 +40,8 @@ def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
     for idx, (images, labels) in enumerate(data_loader):
         for j in range(len(images)):
             img = scipy.misc.imread(images[j], mode='RGB').astype(np.float)
-            img_hr = scipy.misc.imresize(img, (64, 64))
-            img_lr = scipy.misc.imresize(img, (16, 16))
+            img_hr = scipy.misc.imresize(img, (224, 224))
+            img_lr = scipy.misc.imresize(img, (21, 15))
             # If training => do random flip
             if name == "train" and np.random.random() < 0.5:
                 img_hr = np.fliplr(img_hr)
@@ -49,7 +49,7 @@ def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
 
             img_hr = np.array(img_hr) / 127.5 - 1.
             img_lr = np.array(img_lr) / 127.5 - 1.
-            print("putting image {} with label {}".format(ii, labels[j].shape))
+            print("putting image {} with label {}".format(ii, labels[j]))
             txn.put(u'{}'.format(ii).encode('ascii'), dumps_pyarrow((img_lr, img_hr)))
             ii += 1
             if ii % write_frequency == 0:
