@@ -40,17 +40,18 @@ def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
     for idx, (images, labels) in enumerate(data_loader):
         for j in range(len(images)):
             img = scipy.misc.imread(images[j], mode='RGB').astype(np.float)
-            img_hr = scipy.misc.imresize(img, (224, 224))
-            img_lr = scipy.misc.imresize(img, (21, 15))
-            # If training => do random flip
-            if name == "train" and np.random.random() < 0.5:
-                img_hr = np.fliplr(img_hr)
-                img_lr = np.fliplr(img_lr)
-
-            img_hr = np.array(img_hr) / 127.5 - 1.
-            img_lr = np.array(img_lr) / 127.5 - 1.
+            # img_hr = scipy.misc.imresize(img, (224, 224))
+            # img_lr = scipy.misc.imresize(img, (21, 15))
+            # # If training => do random flip
+            # if name == "train" and np.random.random() < 0.5:
+            #     img_hr = np.fliplr(img_hr)
+            #     img_lr = np.fliplr(img_lr)
+            #
+            # img_hr = np.array(img_hr) / 127.5 - 1.
+            # img_lr = np.array(img_lr) / 127.5 - 1.
             print("putting image {} with label {}".format(ii, labels[j]))
-            txn.put(u'{}'.format(ii).encode('ascii'), dumps_pyarrow((img_lr, img_hr)))
+            txn.put(u'{}'.format(ii).encode('ascii'), dumps_pyarrow((img, labels[j])))
+
             ii += 1
             if ii % write_frequency == 0:
                 print("[%d/%d]" % (ii, len(data_loader)*batch_size))
@@ -101,14 +102,16 @@ def load_data(train_path, test_path, mode='train'):
     train_dataset = ImageFolder(train_path)
     test_dataset = ImageFolder(test_path)
     print("Dataset loaded!")
+    train_idx_to_class = {v: k for k, v in train_dataset.class_to_idx.items()}
+    test_idx_to_class = {v: k for k, v in test_dataset.class_to_idx.items()}
     samples = []
 
     for img_path, label in train_dataset.samples:
         print("img path {} with label {} appended to samples.".format(img_path, label))
         samples.append((img_path, label))
 
-    # pickle.dump(train_idx_to_class, open('./model/HR_train_idx_to_class.pkl', 'wb'))
-    # pickle.dump(test_idx_to_class, open('./model/HR_test_idx_to_class.pkl', 'wb'))
+    pickle.dump(train_idx_to_class, open('/imaging/nbayat/VggFaceLmdb/vggface2_train_idx_to_class.pkl', 'wb'))
+    pickle.dump(test_idx_to_class, open('/imaging/nbayat/VggFaceLmdb/vggface2_test_idx_to_class.pkl', 'wb'))
 
     print("Number of samples: ", len(samples))
     return samples
