@@ -11,11 +11,15 @@
 
 import dlib
 import imageio
+import cv2
+from glob import glob
+import matplotlib.pyplot as plt
+import random
+import os
 
-
+# This detector is based on histogram of oriented gradients (HOG) and linear SVM
 def faceDetect(imgArray):
     detector = dlib.get_frontal_face_detector()
-    # Run the face detector, upsampling the image 1 time to find smaller faces.
     dets = detector(imgArray, 1)
     if len(dets) >= 1:
         return True
@@ -24,13 +28,48 @@ def faceDetect(imgArray):
 
 
 def main():
-    num = input("please enter number of the image: ")
-    while num != str(-1):
-        img_path = "Abdullah_Gul/Abdullah_Gul_{}.jpg".format(num)
-        img = imageio.imread(img_path, pilmode='RGB')
-        print(faceDetect(img))
-        num = input("please enter number of the image: ")
+    dsize = 40
+    flag = False
+    # path = glob('../LFW/Abdullah_Gul/*.jpg')
+    path = glob('../LFW/Abid_Hamid_Mahmud_Al-Tikriti/*.jpg')
+    # path = glob('../LFW/Michael_Chang/*.jpg')
+    imgs = []
+    while (not flag):
+        print("size: ({}, {})".format(dsize, dsize))
+        for idx, img_path in enumerate(path):
+            img = imageio.imread(img_path, pilmode='RGB')
+            img_resized = cv2.resize(img, dsize=(dsize, dsize), interpolation=cv2.INTER_AREA)
+            if faceDetect(img_resized):
+                img_path = img_path.split("/")
+                print(img_path[len(img_path)-1])
+                imgs.append((img, img_path[len(img_path)-2], img_path[len(img_path)-1]))
+                flag = True
+            elif idx == len(path)-1:
+                if not flag:
+                    dsize += 5
+                else:
+                    break
+
+    gallery_face, identity, id = imgs[random.randint(0, len(imgs))][0]
+    plt.imshow(gallery_face)
+    plt.show()
+    dir_path = os.path.join("../LFW/LR_HR_pairs",identity)
+    if not os.path.exists():
+        print("Directory {} created!".format(identity))
+        os.makedirs(identity)
+
 
 
 if __name__ == "__main__":
     main()
+
+# img = scipy.misc.imread(img_path, mode='RGB').astype(np.float)
+# img_hr = scipy.misc.imresize(img, (224, 224))
+# img_lr = scipy.misc.imresize(img, (21, 15))
+# # If training => do random flip
+# if name == "train" and np.random.random() < 0.5:
+#     img_hr = np.fliplr(img_hr)
+#     img_lr = np.fliplr(img_lr)
+#
+# img_hr = np.array(img_hr) / 127.5 - 1.
+# img_lr = np.array(img_lr) / 127.5 - 1.
