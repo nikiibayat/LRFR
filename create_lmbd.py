@@ -8,6 +8,7 @@ import torchvision.transforms as transforms
 import numpy as np
 from torch.utils.data import Dataset
 import scipy.misc
+import matplotlib.pyplot as plt
 
 
 class VGG_Dataset(Dataset):
@@ -22,41 +23,29 @@ class VGG_Dataset(Dataset):
 
 
 def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
-    batch_size = 128
-    dataset = VGG_Dataset(samples)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
-    print("Number of training samples in total: {}".format(len(samples)))
-    print("Number of batches: {}".format(len(data_loader)))
+    dataset = ImageFolder(samples)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1)
+    print("Number of samples: {}".format(len(dataset.samples)))
     lmdb_path = osp.join("/imaging/nbayat/VggFaceLmdb", "%s.lmdb" % name)
     isdir = os.path.isdir(lmdb_path)
-
+    idx_to_class = {v: k for k, v in dataset.class_to_idx.items()}
     print("Generate LMDB to %s" % lmdb_path)
     db = lmdb.open(lmdb_path, subdir=isdir,
-                   map_size=10e+12, readonly=False,
+                   map_size=10e+11, readonly=False,
                    meminit=False, map_async=True)
 
     ii = 0
     txn = db.begin(write=True)
-    for idx, (images, labels) in enumerate(data_loader):
-        for j in range(len(images)):
-            img = scipy.misc.imread(images[j], mode='RGB').astype(np.float)
-            # img_hr = scipy.misc.imresize(img, (224, 224))
-            # img_lr = scipy.misc.imresize(img, (21, 15))
-            # # If training => do random flip
-            # if name == "train" and np.random.random() < 0.5:
-            #     img_hr = np.fliplr(img_hr)
-            #     img_lr = np.fliplr(img_lr)
-            #
-            # img_hr = np.array(img_hr) / 127.5 - 1.
-            # img_lr = np.array(img_lr) / 127.5 - 1.
-            print("putting image {} with label {}".format(ii, labels[j]))
-            txn.put(u'{}'.format(ii).encode('ascii'), dumps_pyarrow((img, labels[j])))
+    for idx, (img, label) in enumerate(dataset):
+        target = idx_to_class[label]
+        print("putting image {} with label {} identity {}".format(ii, label, target))
+        txn.put(u'{}'.format(ii).encode('ascii'), dumps_pyarrow((img, label, target)))
 
-            ii += 1
-            if ii % write_frequency == 0:
-                print("[%d/%d]" % (ii, len(data_loader)*batch_size))
-                txn.commit()
-                txn = db.begin(write=True)
+        ii += 1
+        if ii % write_frequency == 0:
+            print("[%d/%d]" % (ii, len(data_loader)*1))
+            txn.commit()
+            txn = db.begin(write=True)
 
     # finish iterating through dataset
     txn.commit()
@@ -125,5 +114,7 @@ root = '/home/nbayat5/Desktop/VggFaces/'
 train_path = root + 'train'
 test_path = root + 'test'
 
-samples = load_data(train_path, test_path, mode='train')
-folder2lmdb(samples, 'VggFaces_LR_HR_Train')
+# samples = load_data(train_path, test_path, mode='train')
+# folder2lmdb(samples, 'VggFaces_LR_HR_Train')
+
+folder2lmdb(train_path, 'VggFaces_LR_HR_Train')
