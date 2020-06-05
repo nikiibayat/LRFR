@@ -17,51 +17,65 @@ import matplotlib.pyplot as plt
 import random
 import os
 
+
 # This detector is based on histogram of oriented gradients (HOG) and linear SVM
 def faceDetect(imgArray):
     detector = dlib.get_frontal_face_detector()
-    dets = detector(imgArray, 1)
-    if len(dets) >= 1:
-        return True
+    dets, scores, idx = detector.run(imgArray, 1, -1)
+    if len(scores) != 0:
+        return max(scores)
     else:
-        return False
+        return -1
+
+
+def create_dataset(path, count):
+    scores = []
+    for idx, img_path in enumerate(path):
+        img = imageio.imread(img_path, pilmode='RGB')
+        scores.append(faceDetect(img))
+
+    gallery_index = scores.index(max(scores))
+    gallery_face = imageio.imread(path[gallery_index], pilmode='RGB')
+    path_parts = path[gallery_index].split("/")
+    identity = path_parts[len(path_parts)-2]
+    gallery_id = path_parts[len(path_parts)-1]
+    # plt.title("gallery face")
+    # plt.imshow(gallery_face)
+    # plt.show()
+    dir_path = os.path.join("../LFW/LR_HR_pairs", identity)
+    if not os.path.exists(dir_path):
+        print("identity number {}: {} -- Directory created!".format(count, identity))
+        os.makedirs(dir_path)
+    gallery_id2 = identity + "_gallery.jpg"
+    imageio.imwrite(os.path.join(dir_path, gallery_id2), gallery_face)
+
+    while True:
+        random_index = random.randint(0, len(path)-1)
+        if random_index != gallery_index:
+            break
+    probe_path = path[random_index]
+    probe_img = imageio.imread(probe_path, pilmode='RGB')
+    # plt.title("probe face")
+    # plt.imshow(probe_img)
+    # plt.show()
+    probe_path_parts = probe_path.split("/")
+    probe_id = probe_path_parts[len(probe_path_parts)-2]+"_probe.jpg"
+    imageio.imwrite(os.path.join(dir_path, probe_id), probe_img)
 
 
 def main():
-    dsize = 40
-    flag = False
-    # path = glob('../LFW/Abdullah_Gul/*.jpg')
-    path = glob('../LFW/Abid_Hamid_Mahmud_Al-Tikriti/*.jpg')
-    # path = glob('../LFW/Michael_Chang/*.jpg')
-    imgs = []
-    while (not flag):
-        print("size: ({}, {})".format(dsize, dsize))
-        for idx, img_path in enumerate(path):
-            img = imageio.imread(img_path, pilmode='RGB')
-            img_resized = cv2.resize(img, dsize=(dsize, dsize), interpolation=cv2.INTER_AREA)
-            if faceDetect(img_resized):
-                img_path = img_path.split("/")
-                print(img_path[len(img_path)-1])
-                imgs.append((img, img_path[len(img_path)-2], img_path[len(img_path)-1]))
-                flag = True
-            elif idx == len(path)-1:
-                if not flag:
-                    dsize += 5
-                else:
-                    break
-
-    gallery_face, identity, id = imgs[random.randint(0, len(imgs))][0]
-    plt.imshow(gallery_face)
-    plt.show()
-    dir_path = os.path.join("../LFW/LR_HR_pairs",identity)
-    if not os.path.exists():
-        print("Directory {} created!".format(identity))
-        os.makedirs(identity)
-
-
+    # path = glob('../LFW/lfw-deepfunneled/Abdullah_Gul/*.jpg')
+    root = "../LFW/lfw-deepfunneled"
+    count = 1
+    for subdir, dirs, files in os.walk(root):
+        for dir in dirs:
+            path = glob("../LFW/lfw-deepfunneled/"+dir+"/*.jpg")
+            create_dataset(path, count)
+            count += 1
 
 if __name__ == "__main__":
     main()
+
 
 # img = scipy.misc.imread(img_path, mode='RGB').astype(np.float)
 # img_hr = scipy.misc.imresize(img, (224, 224))
