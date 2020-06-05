@@ -59,34 +59,7 @@ def folder2lmdb(samples, name="train", write_frequency=5000, num_workers=16):
     db.close()
 
 
-class ImageFolderLMDB(Dataset):
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.env = lmdb.open(db_path, subdir=osp.isdir(db_path),
-                             readonly=True, lock=False,
-                             readahead=False, meminit=False)
-        with self.env.begin(write=False) as txn:
-            self.length = pickle.loads(txn.get(b'__len__')) - 1
-            self.keys = pickle.loads(txn.get(b'__keys__'))
-            self.keys = self.keys[:-1]
-
-    def __getitem__(self, index):
-        env = self.env
-        with env.begin(write=False) as txn:
-            byteflow = txn.get(self.keys[index])
-        return pickle.loads(byteflow)
-
-    def __len__(self):
-        return self.length
-
-    def __repr__(self):
-        return self.__class__.__name__ + ' (' + self.db_path + ')'
-
-
 def load_data(train_path, test_path, mode='train'):
-    # gallery_dataset = ImageFolderLMDB('./model/HR_gallery_embedding_target.lmdb')
-    # gallery_loader = torch.utils.data.DataLoader(gallery_dataset, batch_size=1)
-
     print("Loading dataset from %s" % train_path)
     train_dataset = ImageFolder(train_path)
     test_dataset = ImageFolder(test_path)

@@ -22,29 +22,78 @@ from keras.optimizers import Adam
 import datetime
 import matplotlib.pyplot as plt
 import imageio
-
 plt.switch_backend('agg')
 import sys
-from data_loader import DataLoader
 import numpy as np
 import os
-from keras.applications.inception_v3 import InceptionV3
-from keras.applications.inception_v3 import preprocess_input
-from scipy.linalg import sqrtm
-from skimage.transform import resize
+import os.path as osp
+import pickle
+import lmdb
+from torch.utils.data import Dataset
+import random
+import torch
+# from data_loader import DataLoader
 
-import keras.backend as K
+
+class ImageFolderLMDB(Dataset):
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.env = lmdb.open(db_path, subdir=osp.isdir(db_path),
+                             readonly=True, lock=False,
+                             readahead=False, meminit=False)
+        with self.env.begin(write=False) as txn:
+            self.length = pickle.loads(txn.get(b'__len__')) - 1
+            self.keys = pickle.loads(txn.get(b'__keys__'))
+            self.keys = self.keys[:-1]
+
+    def __getitem__(self, index):
+        env = self.env
+        with env.begin(write=False) as txn:
+            byteflow = txn.get(self.keys[index])
+        return pickle.loads(byteflow)
+
+    def __len__(self):
+        return self.length
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + self.db_path + ')'
+
+
+def load_data(vgg_dataset, batch_size, is_testing=False):
+    imgs_hr = []
+    imgs_lr = []
+    batch_images = []
+    length = len(vgg_dataset)
+    randomList = random.sample(range(0, length-1), batch_size)
+    for idx in range(len(randomList)):
+        batch_images.append(vgg_dataset.__getitem__(idx)[0])
+
+    for img in batch_images:
+        img_hr = scipy.misc.imresize(img, (224, 224))
+        img_lr = scipy.misc.imresize(img, (21, 15))
+
+        # If training => do random flip
+        if not is_testing and np.random.random() < 0.5:
+            img_hr = np.fliplr(img_hr)
+            img_lr = np.fliplr(img_lr)
+
+        imgs_hr.append(img_hr)
+        imgs_lr.append(img_lr)
+
+    imgs_hr = np.array(imgs_hr) / 127.5 - 1.
+    imgs_lr = np.array(imgs_lr) / 127.5 - 1.
+    return imgs_hr, imgs_lr
 
 
 class SRGAN():
     def __init__(self):
         # Input shape
         self.channels = 3
-        self.lr_height = 16  # Low resolution height
-        self.lr_width = 16  # Low resolution width
+        self.lr_height = 21  # Low resolution height
+        self.lr_width = 15  # Low resolution width
         self.lr_shape = (self.lr_height, self.lr_width, self.channels)
-        self.hr_height = self.lr_height * 4  # High resolution height
-        self.hr_width = self.lr_width * 4  # High resolution width
+        self.hr_height = 224 # High resolution height
+        self.hr_width = 224 # High resolution width
         self.hr_shape = (self.hr_height, self.hr_width, self.channels)
 
         # Number of residual blocks in the generator
@@ -63,9 +112,9 @@ class SRGAN():
                          metrics=['accuracy'])
 
         # Configure data loader
-        self.dataset_name = 'CelebA'
-        self.data_loader = DataLoader(dataset_name=self.dataset_name,
-                                      img_res=(self.hr_height, self.hr_width))
+        self.dataset_name = 'VggFace2'
+        # self.data_loader = DataLoader(dataset_name=self.dataset_name,
+        #                               img_res=(self.hr_height, self.hr_width))
 
         # Calculate output shape of D (PatchGAN)
         patch = int(self.hr_height / 2 ** 4)
@@ -206,6 +255,8 @@ class SRGAN():
     def train(self, epochs, batch_size=1, sample_interval=50):
         # out = open('output.txt','w')
         start_time = datetime.datetime.now()
+        # vgg_dataset = ImageFolderLMDB('/home/nbayat5/scratch/vggface2/VggFaces_LR_HR_Train.lmdb')
+        vgg_dataset = ImageFolderLMDB('/imaging/nbayat/VggFaceLmdb/VggFaces_LR_HR_Train.lmdb')
 
         for epoch in range(epochs):
 
@@ -214,7 +265,8 @@ class SRGAN():
             # ----------------------
 
             # Sample images and their conditioning counterparts
-            imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+            # imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+            imgs_hr, imgs_lr = load_data(vgg_dataset, batch_size)
 
             # From low res. image generate high res. version
             fake_hr = self.generator.predict(imgs_lr)
@@ -233,7 +285,8 @@ class SRGAN():
             # ------------------
 
             # Sample images and their conditioning counterparts
-            imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+            # imgs_hr, imgs_lr = self.data_loader.load_data(batch_size)
+            imgs_hr, imgs_lr = load_data(vgg_dataset, batch_size)
 
             # The generators want the discriminators to label the generated
             # images as real
@@ -256,16 +309,16 @@ class SRGAN():
 
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
-                self.sample_images(epoch)
-                self.generator.save('saved_model/srgan_model.h5')
+                self.sample_images(epoch, vgg_dataset)
+                self.generator.save('srgan_21-15-to-224-224.h5')
         # out.close()
 
-    def sample_images(self, epoch):
+    def sample_images(self, epoch, vgg_dataset):
         os.makedirs('images/%s' % self.dataset_name, exist_ok=True)
         r, c = 2, 2
 
-        imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2,
-                                                      is_testing=True)
+        # imgs_hr, imgs_lr = self.data_loader.load_data(batch_size=2, is_testing=True)
+        imgs_hr, imgs_lr = load_data(vgg_dataset, batch_size=2, is_testing=True)
         fake_hr = self.generator.predict(imgs_lr)
 
         # Rescale images 0 - 1
@@ -310,127 +363,10 @@ class SRGAN():
         plt.close()
 
 
-def fid_score(images1, images2):
-    # load inception v3 model
-    model = InceptionV3(include_top=False, input_shape=(75, 75, 3),
-                        pooling='avg')
-    fid = calculate_fid(model, images1, images2)
-    print('FID (different): %.3f' % fid)
-
-
-def scale_images(images, new_shape):
-    images_list = list()
-    for image in images:
-        # resize with nearest neighbor interpolation
-        new_image = resize(image, new_shape, 0)
-        # store
-        images_list.append(new_image)
-    return np.asarray(images_list)
-
-
-def calculate_fid(model, images1, images2):
-    N = len(images1)
-    images1 = np.asarray(images1)
-    images2 = np.asarray(images2)
-    images1 = images1.reshape((N, 64, 64, 3))
-    images2 = images2.reshape((N, 64, 64, 3))
-    images1 = images1.astype('float32')
-    images2 = images2.astype('float32')
-    # resize images
-    images1 = scale_images(images1, (75, 75, 3))
-    images2 = scale_images(images2, (75, 75, 3))
-    images1 = preprocess_input(images1)
-    images2 = preprocess_input(images2)
-    # calculate activations
-    act1 = model.predict(images1)
-    act2 = model.predict(images2)
-    # calculate mean and covariance statistics
-    mu1, sigma1 = act1.mean(axis=0), np.cov(act1, rowvar=False)
-    mu2, sigma2 = act2.mean(axis=0), np.cov(act2, rowvar=False)
-    # calculate sum squared difference between means
-    ssdiff = np.sum((mu1 - mu2) ** 2.0)
-    # calculate sqrt of product between cov
-    covmean = sqrtm(sigma1.dot(sigma2))
-    # check and correct imaginary numbers from sqrt
-    if np.iscomplexobj(covmean):
-        covmean = covmean.real
-    # calculate score
-    fid = ssdiff + np.trace(sigma1 + sigma2 - 2.0 * covmean)
-    return fid
-
-
-def create_datasets(gan):
-    gan.generator.load_weights('saved_model/VGG_saved_model/VGG16to64.h5')
-    rootdir = "/home/nbayat5/Desktop/celebA/face_recognition_without_bbx/identities"
-    print("creating datasets...")
-
-    for subdir, dirs, files in os.walk(rootdir):
-        for dir in dirs:
-            path = os.path.join(rootdir, subdir)
-            parts = path.split("/")
-            if len(parts) != 8:
-                continue
-
-            print("Identity name: ",parts[7]) #identity name
-            split_set = "Train"
-            imgs_hr, imgs_lr = gan.data_loader.load_dataforIdentities(path, split_set)
-            root = "/home/nbayat5/Desktop/celebA/face_recognition_without_bbx/"
-            #path_hr = os.path.join(root, "HR{}".format(split_set), parts[7].rstrip())
-            #path_lr = os.path.join(root, "LR{}".format(split_set), parts[7].rstrip())
-            path_srgan = os.path.join(root, "VGG_SRGAN_{}/{}".format(split_set, parts[7].rstrip()))
-            #if not os.path.exists(path_hr):
-             #   os.makedirs(path_hr)
-            #if not os.path.exists(path_lr):
-             #   os.makedirs(path_lr)
-            if not os.path.exists(path_srgan):
-                os.makedirs(path_srgan)
-            counter = 1
-            fake_hr = gan.generator.predict(imgs_lr)
-            for idx in range(len(imgs_lr)):
-                fake_hr[idx] = 0.5 * fake_hr[idx] + 0.5
-                fake_hr[idx] = np.asarray(fake_hr[idx])
-                #path_hr_write = path_hr+"/%s_%d.jpg" % (parts[7].rstrip(), counter)
-                #path_lr_write = path_lr+"/%s_%d.jpg" % (parts[7].rstrip(), counter)
-                path_srgan_write = path_srgan+"/%s_%d.jpg" % (parts[7].rstrip(), counter)
-                #imageio.imwrite(path_hr_write, imgs_hr[idx])
-                #imageio.imwrite(path_lr_write, imgs_lr[idx])
-                imageio.imwrite(path_srgan_write, fake_hr[idx])
-                print("image %s_%d.png saved." % (parts[7].rstrip(), counter))
-                counter += 1
-            """
-            """
-            break
 
 
 if __name__ == '__main__':
     gan = SRGAN()
-    # gan.train(epochs=30000, batch_size=1, sample_interval=50)
-
-    # to create train test validation HR - LR - SRGAN datasets uncomment method below and change names
-    create_datasets(gan)
-
-    #gan.generator.load_weights('saved_model/VGG_saved_model/VGG16to64.h5')
-    #celebA_path = "/home/nbayat5/Desktop/celebA/face_recognition_without_bbx/face_recognition_LR_test"
-    #lfw_path = "/home/nbayat5/Desktop/LFW/face_recognition_without_bbx/LR_Test"
+    gan.train(epochs=30000, batch_size=1, sample_interval=50)
 
 
-
-    ##########PSNR - SSIM - FID ###############
-    # with tf.Session() as sess:
-    #     print("CelebA Tensorflow PSNR: ", np.mean(tf.image.psnr(imgs_hr,
-    #     fake_hr, max_val=1).eval()))
-    #     print("CelebA Tensorflow SSIM: ", np.mean(tf.image.ssim(
-    #     tf.image.convert_image_dtype(imgs_hr, tf.float32),
-    #     tf.image.convert_image_dtype(fake_hr, tf.float32),max_val=1).eval()))
-    #     # fid_score(imgs_hr, fake_hr)
-    #     gan.save_images(fake_hr, "Generated")
-
-    # gan2 = SRGAN()
-    # gan2.generator.load_weights('saved_model/VGG_saved_model/srgan_model.h5')
-    # fake_hr2 = gan2.generator.predict(imgs_lr)
-    # with tf.Session() as sess:
-    # print("VGG Tensorflow PSNR: ", np.std(tf.image.psnr(imgs_hr,fake_hr2,
-    # max_val=1).eval()))
-    # print("VGG Tensorflow SSIM: ", np.std(tf.image.ssim(tf.image.convert_image_dtype(imgs_hr, tf.float32),tf.image.convert_image_dtype(fake_hr2, tf.float32),max_val=1).eval()))
-    # for k in range(0,100,2):
-    #     gan2.save_images(imgs_hr[k:k+2], imgs_lr[k:k+2], fake_hr2[k:k+2], "VGG",k)
