@@ -215,7 +215,8 @@ class SRGAN():
 
         # Upsampling
         u1 = deconv2d(c2)
-        u2 = deconv2d(u1)
+        u3 = deconv2d(u1) # I added
+        u2 = deconv2d(u3)
 
         # Generate high resolution output
         gen_hr = Conv2D(self.channels, kernel_size=9, strides=1, padding='same',
