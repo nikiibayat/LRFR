@@ -70,7 +70,7 @@ def load_data(vgg_dataset, batch_size, is_testing=False):
 
     for img in batch_images:
         img_hr = scipy.misc.imresize(img, (224, 224))
-        img_lr = scipy.misc.imresize(img, (21, 15))
+        img_lr = scipy.misc.imresize(img, (28, 28))
 
         # If training => do random flip
         if not is_testing and np.random.random() < 0.5:
@@ -89,8 +89,8 @@ class SRGAN():
     def __init__(self):
         # Input shape
         self.channels = 3
-        self.lr_height = 21  # Low resolution height
-        self.lr_width = 15  # Low resolution width
+        self.lr_height = 28  # Low resolution height
+        self.lr_width = 28  # Low resolution width
         self.lr_shape = (self.lr_height, self.lr_width, self.channels)
         self.hr_height = 224 # High resolution height
         self.hr_width = 224 # High resolution width
@@ -215,7 +215,8 @@ class SRGAN():
 
         # Upsampling
         u1 = deconv2d(c2)
-        u2 = deconv2d(u1)
+        u3 = deconv2d(u1) # I added
+        u2 = deconv2d(u3)
 
         # Generate high resolution output
         gen_hr = Conv2D(self.channels, kernel_size=9, strides=1, padding='same',
@@ -255,8 +256,8 @@ class SRGAN():
     def train(self, epochs, batch_size=1, sample_interval=50):
         # out = open('output.txt','w')
         start_time = datetime.datetime.now()
-        # vgg_dataset = ImageFolderLMDB('/home/nbayat5/scratch/vggface2/VggFaces_LR_HR_Train.lmdb')
-        vgg_dataset = ImageFolderLMDB('/imaging/nbayat/VggFaceLmdb/VggFaces_LR_HR_Train.lmdb')
+        vgg_dataset = ImageFolderLMDB('/home/nbayat5/scratch/vggface2/VggFaces_LR_HR_Train.lmdb')
+        # vgg_dataset = ImageFolderLMDB('/imaging/nbayat/VggFaceLmdb/VggFaces_LR_HR_Train.lmdb')
 
         for epoch in range(epochs):
 
