@@ -31,6 +31,7 @@ import pickle
 import lmdb
 from torch.utils.data import Dataset
 import random
+from keras.models import load_model
 import torch
 # from data_loader import DataLoader
 
@@ -254,6 +255,7 @@ class SRGAN():
         return Model(d0, validity)
 
     def train(self, epochs, batch_size=1, sample_interval=50):
+        self.generator = load_model('srgan_21-15-to-224-224.h5')
         # out = open('output.txt','w')
         start_time = datetime.datetime.now()
         vgg_dataset = ImageFolderLMDB('/home/nbayat5/scratch/vggface2/VggFaces_LR_HR_Train.lmdb')
