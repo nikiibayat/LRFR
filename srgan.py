@@ -66,7 +66,7 @@ def load_data(vgg_dataset, batch_size, is_testing=False):
     batch_images = []
     length = len(vgg_dataset)
     randomList = random.sample(range(0, length-1), batch_size)
-    for idx in range(len(randomList)):
+    for idx in randomList:
         batch_images.append(vgg_dataset.__getitem__(idx)[0])
 
     for img in batch_images:
@@ -255,7 +255,7 @@ class SRGAN():
         return Model(d0, validity)
 
     def train(self, epochs, batch_size=1, sample_interval=50):
-        self.generator = load_model('srgan_21-15-to-224-224.h5')
+        # self.generator = load_model('srgan_21-15-to-224-224.h5')
         # out = open('output.txt','w')
         start_time = datetime.datetime.now()
         vgg_dataset = ImageFolderLMDB('/home/nbayat5/scratch/vggface2/VggFaces_LR_HR_Train.lmdb')
@@ -313,7 +313,7 @@ class SRGAN():
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
                 self.sample_images(epoch, vgg_dataset)
-                self.generator.save('srgan_21-15-to-224-224.h5')
+                self.generator.save('srgan_28-28-to-224-224.h5')
         # out.close()
 
     def sample_images(self, epoch, vgg_dataset):

@@ -9,8 +9,8 @@ def upscale(gan, img_path):
     img = scipy.misc.imread(img_path, mode='RGB').astype(np.float)
     imgs_hr = []
     imgs_lr = []
-    imgs_hr.append(scipy.misc.imresize(img, (64, 64)))
-    imgs_lr.append(scipy.misc.imresize(img, (16, 16)))
+    imgs_hr.append(scipy.misc.imresize(img, (224, 224)))
+    imgs_lr.append(scipy.misc.imresize(img, (28, 28)))
     imgs_hr = np.array(imgs_hr) / 127.5 - 1.
     imgs_lr = np.array(imgs_lr) / 127.5 - 1.
     fake_hr = gan.generator.predict(imgs_lr)
@@ -21,7 +21,7 @@ def upscale(gan, img_path):
 
 def main():
     gan = SRGAN()
-    gan.generator.load_weights('model/VGG_saved_model/vgg16to64.h5')
+    gan.generator.load_weights('srgan_28-28-to-224-224.h5')
     upscale(gan, "GT.jpg")
 
 

@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="nbayat5@129.100.119.103:22" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="nbayat5@129.100.118.45:22" autoUploadExternalChanges="true">
     <serverData>
+      <paths name="nbayat5@129.100.118.45:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/nbayat5/LRFR" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="nbayat5@129.100.119.103:22">
         <serverdata>
           <mappings>
