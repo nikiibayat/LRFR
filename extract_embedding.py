@@ -31,9 +31,10 @@ def extract_features(img_path):
 
 def main():
     vggface = VGGFace(model='resnet50') # models: vgg16, resnet50, senet50
-    predict(vggface, "GT.jpg")
-    extract_features("GT.jpg")
+    predict(vggface, "./SRGAN.png")
+    extract_features("./SRGAN.png")
 
 
 if __name__ == "__main__":
     main()
+
