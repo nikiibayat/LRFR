@@ -22,8 +22,7 @@ def upscale(gan, img_LR_path, img_HR_path):
 
     parts = img_LR_path.split("/")
     fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR/{}".format(parts[len(parts)-1])
-    plt.imshow(np.squeeze(fake_hr))
-    plt.savefig("/imaging/nbayat/AR/LRFR_Pairs/fake_HR/plot_save.jpg")
+
     imageio.imwrite(fake_path, np.squeeze(fake_hr))
     parts = img_HR_path.split("/")
     hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR/{}".format(parts[len(parts)-1])
@@ -32,11 +31,14 @@ def upscale(gan, img_LR_path, img_HR_path):
 
 def main():
     gan = SRGAN()
-    gan.generator.load_weights('srgan_28-28-to-224-224.h5')
+    gan.generator.load_weights('srgan_28-28-to-224-224.h5') # trained on vgg train
     # upscale(gan, "/imaging/nbayat/AR/LRFR_Pairs/m-015-1.jpg", "/imaging/nbayat/AR/LRFR_Pairs/m-015-14.jpg")
 
-    img_path = "/home/nbayat5/Desktop/VggFaces/train/n009279/0285_03.jpg"
-    upscale(gan, img_path, img_path) #vgg train
+    img_path = "/imaging/nbayat/AR/LRFR_Pairs/w-032-1.jpg" # AR
+    img_path = "/home/nbayat5/Desktop/LFW/lfw-deepfunneled/Zoran_Djindjic/Zoran_Djindjic_0004.jpg" # LFW
+    # img_path = "/home/nbayat5/Desktop/VggFaces/test/n008179/0321_01.jpg" #VGG test
+    upscale(gan, img_path, img_path)
+
 
 if __name__ == "__main__":
     main()
