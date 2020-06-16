@@ -4,7 +4,7 @@ from srgan import SRGAN # put srgan.py in the folder
 import numpy as np
 import imageio
 import scipy
-
+import matplotlib.pyplot as plt
 
 def upscale(gan, img_LR_path, img_HR_path):
     img_lr = scipy.misc.imread(img_LR_path, mode='RGB').astype(np.float)
@@ -16,13 +16,17 @@ def upscale(gan, img_LR_path, img_HR_path):
     imgs_hr = np.array(imgs_hr) / 127.5 - 1.
     imgs_lr = np.array(imgs_lr) / 127.5 - 1.
     fake_hr = gan.generator.predict(imgs_lr)
-    fake_hr = np.asarray(fake_hr)
-    fake_hr = np.asarray(0.5 * fake_hr + 0.5)
+
+    fake_hr = 0.5 * fake_hr + 0.5
+    imgs_hr = 0.5 * imgs_hr + 0.5
+
     parts = img_LR_path.split("/")
     fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR/{}".format(parts[len(parts)-1])
+    plt.imshow(np.squeeze(fake_hr))
+    plt.savefig("/imaging/nbayat/AR/LRFR_Pairs/fake_HR/plot_save.jpg")
     imageio.imwrite(fake_path, np.squeeze(fake_hr))
     parts = img_HR_path.split("/")
-    hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR/{}.jpg".format(parts[len(parts)-1])
+    hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR/{}".format(parts[len(parts)-1])
     imageio.imwrite(hr_path, imgs_hr[0])
     return np.squeeze(fake_hr), imgs_hr
 
