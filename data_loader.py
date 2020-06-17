@@ -79,29 +79,11 @@ def create_AR_dataset():
                 parts = filename.split(".")[0].split("-")
                 number = parts[2]
                 if number == "1":  # LR
-                    if parts[0] == "m":
-                        if male_count_1 >= 50:
-                            continue
-                        male_count_1 += 1
-                    else:
-                        if female_count_1 >= 50:
-                            continue
-                        female_count_1 += 1
-                    print(male_count_1, ": ", path)
                     os.system(
                         "magick convert -size 768X576 -depth 8 -interlace plane rgb:" + path + " /imaging/nbayat/AR/LRFR_Pairs/" +
                         filename.split(".")[0] + ".jpg")
 
                 elif number == "14":  # HR
-                    if parts[0] == "m":
-                        if male_count_14 >= 50:
-                            continue
-                        male_count_14 += 1
-                    else:
-                        if female_count_14 >= 50:
-                            continue
-                        female_count_14 += 1
-                    print(male_count_14, ": ", path)
                     os.system(
                         "magick convert -size 768X576 -depth 8 -interlace plane rgb:" + path + " /imaging/nbayat/AR/LRFR_Pairs/" +
                         filename.split(".")[0] + ".jpg")

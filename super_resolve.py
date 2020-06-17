@@ -4,7 +4,8 @@ from srgan import SRGAN # put srgan.py in the folder
 import numpy as np
 import imageio
 import scipy
-import matplotlib.pyplot as plt
+import os
+
 
 def upscale(gan, img_LR_path, img_HR_path):
     img_lr = scipy.misc.imread(img_LR_path, mode='RGB').astype(np.float)
@@ -32,13 +33,48 @@ def upscale(gan, img_LR_path, img_HR_path):
 def main():
     gan = SRGAN()
     gan.generator.load_weights('srgan_28-28-to-224-224.h5') # trained on vgg train
-    # upscale(gan, "/imaging/nbayat/AR/LRFR_Pairs/m-015-1.jpg", "/imaging/nbayat/AR/LRFR_Pairs/m-015-14.jpg")
 
-    img_path = "/imaging/nbayat/AR/LRFR_Pairs/w-032-1.jpg" # AR
-    img_path = "/home/nbayat5/Desktop/LFW/lfw-deepfunneled/Zoran_Djindjic/Zoran_Djindjic_0004.jpg" # LFW
+    # img_path = "/imaging/nbayat/AR/LRFR_Pairs/w-032-1.jpg" # AR
+    # img_path = "/home/nbayat5/Desktop/LFW/lfw-deepfunneled/Zoran_Djindjic/Zoran_Djindjic_0004.jpg" # LFW
     # img_path = "/home/nbayat5/Desktop/VggFaces/test/n008179/0321_01.jpg" #VGG test
-    upscale(gan, img_path, img_path)
+
+    root_path = "/imaging/nbayat/AR/LRFR_Pairs"
+    for filename in os.listdir(root_path):
+        parts = filename.split('-')
+        if parts[len(parts)-1] == "1.jpg":
+            img_LR_path = os.path.join(root_path, filename)
+            parts[len(parts) - 1] = "14.jpg"
+            HR_filename = '-'.join(parts)
+            img_HR_path = os.path.join(root_path, HR_filename)
+            if os.path.exists(img_HR_path):
+                print(img_LR_path)
+                upscale(gan, img_LR_path, img_HR_path)
 
 
 if __name__ == "__main__":
     main()
+
+
+def select_fifty():
+    root_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR"
+    male_count = 0
+    female_count = 0
+    for filename in os.listdir(root_path):
+        img_LR_path = os.path.join(root_path, filename)
+        parts = filename.split('-')
+        parts[len(parts) - 1] = "14.jpg"
+        HR_filename = '-'.join(parts)
+        img_HR_path = os.path.join("/imaging/nbayat/AR/LRFR_Pairs/HR", HR_filename)
+        if parts[0] == "m":
+            if male_count >= 50:
+                print(filename+" is removed.")
+                os.system("rm {}".format(img_LR_path))
+                os.system("rm {}".format(img_HR_path))
+            male_count += 1
+        else:
+            if female_count >= 50:
+                print(filename + " is removed.")
+                os.system("rm {}".format(img_LR_path))
+                os.system("rm {}".format(img_HR_path))
+            female_count += 1
+
