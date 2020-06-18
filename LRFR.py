@@ -1,11 +1,9 @@
-# Get HR-LR pair
-# Super resolve LR face
-# Extract feature vectors of both super-resolved face and original HR
-# Use cosine distance to match score between feature vectors
 import os
 import extract_embedding as ee
 from scipy import spatial
 import pickle
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def compute_cosine(gallery_embedding, probe_embedding):
@@ -33,29 +31,37 @@ def main():
 
     print("length of hr pickle file: ", len(hr_samples.keys()))
     print("length of lr pickle file: ", len(lr_samples.keys()))
-    rank = 2
-    score = 0
-    for filename in os.listdir(fake_path):
-        print("Probe Image: ", filename)
-        cosine_distances = []
-        hr_files = []
-        fake_embd = lr_samples[filename]
-        parts = filename.split('-')
-        parts[len(parts) - 1] = "14.jpg"
-        GT_filename = '-'.join(parts)
-        for hr_filename in os.listdir(hr_path):
-            hr_files.append(hr_filename)
-            hr_embd = hr_samples[hr_filename]
-            cosine_distances.append(compute_cosine(hr_embd, fake_embd))
+    scores = []
+    for rank in range(1, 101):
+        score = 0
+        for filename in os.listdir(fake_path):
+            print("Probe Image: ", filename)
+            cosine_distances = []
+            hr_files = []
+            fake_embd = lr_samples[filename]
+            parts = filename.split('-')
+            parts[len(parts) - 1] = "14.jpg"
+            GT_filename = '-'.join(parts)
+            for hr_filename in os.listdir(hr_path):
+                hr_files.append(hr_filename)
+                hr_embd = hr_samples[hr_filename]
+                cosine_distances.append(compute_cosine(hr_embd, fake_embd))
 
-        indices = sorted(range(len(cosine_distances)), key=lambda i: cosine_distances[i])[:rank]
-        print("indices: ", indices)
-        for index in indices:
-            if hr_files[index] == GT_filename:
-                print("probe {} matched with {}".format(filename, hr_files[index]))
-                score += 1
+            indices = sorted(range(len(cosine_distances)), key=lambda i: cosine_distances[i])[:rank]
+            for index in indices:
+                if hr_files[index] == GT_filename:
+                    print("probe {} matched with {}".format(filename, hr_files[index]))
+                    score += 1
+        print("Rank {} score is: {}".format(rank, score))
+        scores.append(score)
 
-    print("Rank {} score is: {}".format(rank, score))
+    x = np.arange(1, 101)
+    plt.plot(x, scores, color="orange", label="SRGAN - 28x28")
+    plt.xlabel("Rank")
+    plt.ylabel("Cumulative Score")
+    plt.title("Cumulative Match Characteristic for AR")
+    plt.legend()
+    plt.savefig("ScoreRanksAR.png")
 
 
 
