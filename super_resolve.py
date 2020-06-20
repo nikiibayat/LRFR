@@ -12,8 +12,8 @@ def upscale(gan, img_LR_path, img_HR_path):
     img_hr = scipy.misc.imread(img_HR_path, mode='RGB').astype(np.float)
     imgs_hr = []
     imgs_lr = []
-    imgs_hr.append(scipy.misc.imresize(img_hr, (224, 224)))
-    imgs_lr.append(scipy.misc.imresize(img_lr, (28, 28)))
+    imgs_hr.append(scipy.misc.imresize(img_hr, (64, 64)))
+    imgs_lr.append(scipy.misc.imresize(img_lr, (16, 16)))
     imgs_hr = np.array(imgs_hr) / 127.5 - 1.
     imgs_lr = np.array(imgs_lr) / 127.5 - 1.
     fake_hr = gan.generator.predict(imgs_lr)
@@ -22,17 +22,18 @@ def upscale(gan, img_LR_path, img_HR_path):
     imgs_hr = 0.5 * imgs_hr + 0.5
 
     parts = img_LR_path.split("/")
-    fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR/{}".format(parts[len(parts)-1])
+    fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64/{}".format(parts[len(parts)-1])
 
     imageio.imwrite(fake_path, np.squeeze(fake_hr))
     parts = img_HR_path.split("/")
-    hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR/{}".format(parts[len(parts)-1])
+    hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64/{}".format(parts[len(parts)-1])
     imageio.imwrite(hr_path, imgs_hr[0])
     return np.squeeze(fake_hr), imgs_hr
 
 def main():
     gan = SRGAN()
-    gan.generator.load_weights('srgan_28-28-to-224-224.h5') # trained on vgg train
+    # gan.generator.load_weights('srgan_28-28-to-224-224.h5') # trained on vgg train
+    gan.generator.load_weights('/home/nbayat5/Desktop/srgan/saved_model/VGG_saved_model/VGG16to64.h5')
 
     # img_path = "/imaging/nbayat/AR/LRFR_Pairs/w-032-1.jpg" # AR
     # img_path = "/home/nbayat5/Desktop/LFW/lfw-deepfunneled/Zoran_Djindjic/Zoran_Djindjic_0004.jpg" # LFW

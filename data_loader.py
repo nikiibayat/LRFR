@@ -105,14 +105,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# img = scipy.misc.imread(img_path, mode='RGB').astype(np.float)
-# img_hr = scipy.misc.imresize(img, (224, 224))
-# img_lr = scipy.misc.imresize(img, (21, 15))
-# # If training => do random flip
-# if name == "train" and np.random.random() < 0.5:
-#     img_hr = np.fliplr(img_hr)
-#     img_lr = np.fliplr(img_lr)
-#
-# img_hr = np.array(img_hr) / 127.5 - 1.
-# img_lr = np.array(img_lr) / 127.5 - 1.
