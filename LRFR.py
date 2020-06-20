@@ -33,9 +33,10 @@ def main():
     print("length of lr pickle file: ", len(lr_samples.keys()))
     scores = []
     for rank in range(1, 101):
+    # for rank in [1, 5, 10, 20]:
         score = 0
         for filename in os.listdir(fake_path):
-            print("Probe Image: ", filename)
+            # print("Probe Image: ", filename)
             cosine_distances = []
             hr_files = []
             fake_embd = lr_samples[filename]
@@ -50,7 +51,7 @@ def main():
             indices = sorted(range(len(cosine_distances)), key=lambda i: cosine_distances[i])[:rank]
             for index in indices:
                 if hr_files[index] == GT_filename:
-                    print("probe {} matched with {}".format(filename, hr_files[index]))
+                    # print("probe {} matched with {}".format(filename, hr_files[index]))
                     score += 1
         print("Rank {} score is: {}".format(rank, score))
         scores.append(score)

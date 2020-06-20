@@ -53,7 +53,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-
+# select_fifty()
 
 def select_fifty():
     root_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR"
@@ -77,4 +77,5 @@ def select_fifty():
                 os.system("rm {}".format(img_LR_path))
                 os.system("rm {}".format(img_HR_path))
             female_count += 1
+
 
