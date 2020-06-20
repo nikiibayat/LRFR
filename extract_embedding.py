@@ -6,6 +6,7 @@ from keras.engine import  Model
 from keras.layers import Input
 from keras_vggface.vggface import VGGFace
 from keras_vggface import utils
+from facenet_pytorch import InceptionResnetV1
 
 
 def predict(img_path, classify=False):
