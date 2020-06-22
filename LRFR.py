@@ -15,6 +15,9 @@ import torch
 def compute_cosine(gallery_embedding, probe_embedding):
     return spatial.distance.cosine(gallery_embedding, probe_embedding)
 
+def compute_euclidean(gallery_embedding, probe_embedding):
+    return np.linalg.norm(gallery_embedding - probe_embedding)
+
 
 def extract_inception_feature(aligner, facenet_preprocess, facenet, img_path):
     img = preprocessing.ExifOrientationNormalize()(Image.open(img_path).convert('RGB'))
@@ -135,8 +138,8 @@ def main():
         fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_224"
         hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_224"
     else:
-        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_224" # or fake_HR_64
-        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_224" #or HR_64
+        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
+        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
 
     dump_data(fake_path, hr_path, model=model)
     compute_ranks(fake_path, hr_path, model=model)
