@@ -40,15 +40,8 @@ def create_dataset(path, count):
     path_parts = path[gallery_index].split("/")
     identity = path_parts[len(path_parts) - 2]
     gallery_id = path_parts[len(path_parts) - 1]
-    # plt.title("gallery face")
-    # plt.imshow(gallery_face)
-    # plt.show()
-    dir_path = os.path.join("../LFW/LR_HR_pairs", identity)
-    if not os.path.exists(dir_path):
-        print("identity number {}: {} -- Directory created!".format(count, identity))
-        os.makedirs(dir_path)
-    gallery_id2 = identity + "_gallery.jpg"
-    imageio.imwrite(os.path.join(dir_path, gallery_id2), gallery_face)
+    gallery_id2 = identity + "-14.jpg"
+    imageio.imwrite(os.path.join("../Desktop/LFW/LR_HR_pairs", gallery_id2), gallery_face)
 
     while True:
         random_index = random.randint(0, len(path) - 1)
@@ -56,12 +49,9 @@ def create_dataset(path, count):
             break
     probe_path = path[random_index]
     probe_img = imageio.imread(probe_path, pilmode='RGB')
-    # plt.title("probe face")
-    # plt.imshow(probe_img)
-    # plt.show()
     probe_path_parts = probe_path.split("/")
-    probe_id = probe_path_parts[len(probe_path_parts) - 2] + "_probe.jpg"
-    imageio.imwrite(os.path.join(dir_path, probe_id), probe_img)
+    probe_id = probe_path_parts[len(probe_path_parts) - 2] + "-1.jpg"
+    imageio.imwrite(os.path.join("../Desktop/LFW/LR_HR_pairs", probe_id), probe_img)
 
 
 def create_AR_dataset():
@@ -90,17 +80,16 @@ def create_AR_dataset():
 
 
 def main():
-    # path = glob('../LFW/lfw-deepfunneled/Abdullah_Gul/*.jpg')
-    """
-    root = "../LFW/lfw-deepfunneled"
+
+    root = "../Desktop/LFW/lfw-deepfunneled/"
     count = 1
     for subdir, dirs, files in os.walk(root):
         for dir in dirs:
-            path = glob("../LFW/lfw-deepfunneled/"+dir+"/*.jpg")
+            path = glob(root+dir+"/*.jpg")
             create_dataset(path, count)
             count += 1
-    """
-    create_AR_dataset()
+
+    # create_AR_dataset()
 
 
 if __name__ == "__main__":

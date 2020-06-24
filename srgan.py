@@ -90,11 +90,11 @@ class SRGAN():
     def __init__(self):
         # Input shape
         self.channels = 3
-        self.lr_height = 16  # Low resolution height
-        self.lr_width = 16  # Low resolution width
+        self.lr_height = 28  # Low resolution height
+        self.lr_width = 28  # Low resolution width
         self.lr_shape = (self.lr_height, self.lr_width, self.channels)
-        self.hr_height = 64 # High resolution height
-        self.hr_width = 64 # High resolution width
+        self.hr_height = 224 # High resolution height
+        self.hr_width = 224 # High resolution width
         self.hr_shape = (self.hr_height, self.hr_width, self.channels)
 
         # Number of residual blocks in the generator
@@ -216,8 +216,8 @@ class SRGAN():
 
         # Upsampling
         u1 = deconv2d(c2)
-        # u3 = deconv2d(u1) # I added
-        u2 = deconv2d(u1)
+        u3 = deconv2d(u1) # I added
+        u2 = deconv2d(u3)
 
         # Generate high resolution output
         gen_hr = Conv2D(self.channels, kernel_size=9, strides=1, padding='same',

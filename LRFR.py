@@ -43,12 +43,13 @@ def compute_ranks(fake_path, hr_path, model="vggface"):
     print("length of lr pickle file: ", len(lr_samples.keys()))
 
     scores = []
-    for rank in range(1, len(lr_samples.keys()) + 1):
+    for rank in range(1, 101):
         score = 0
+        count = 0
         for filename in os.listdir(fake_path):
             cosine_distances = []
             hr_files = []
-            if filename in lr_samples.keys():
+            if filename in lr_samples.keys() and count < 100:
                 fake_embd = lr_samples[filename]
                 parts = filename.split('-')
                 parts[len(parts) - 1] = "14.jpg"
@@ -58,15 +59,17 @@ def compute_ranks(fake_path, hr_path, model="vggface"):
                         hr_files.append(hr_filename)
                         hr_embd = hr_samples[hr_filename]
                         cosine_distances.append(compute_cosine(hr_embd, fake_embd))
+                count += 1
+
 
             indices = sorted(range(len(cosine_distances)), key=lambda i: cosine_distances[i])[:rank]
             for index in indices:
                 if hr_files[index] == GT_filename:
                     score += 1
-        print("Rank {} score is: {}".format(rank, score))
+        print("Rank {} score is: {} %".format(rank, (score/len(lr_samples.keys())*100) ))
         scores.append(score)
 
-    x = np.arange(1, len(lr_samples.keys()) + 1)
+    x = np.arange(1, 101)
     plt.plot(x, scores, color="orange", label="SRGAN - {} model".format(model))
     plt.xlabel("Rank")
     plt.ylabel("Cumulative Score")
@@ -138,8 +141,10 @@ def main():
         fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_224"
         hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_224"
     else:
-        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
-        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
+        # fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
+        # hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
+        fake_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/fake_HR_224" # fake_HR_64 or fake_HR_224
+        hr_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/HR_224" # HR_64 or HR_224
 
     dump_data(fake_path, hr_path, model=model)
     compute_ranks(fake_path, hr_path, model=model)
