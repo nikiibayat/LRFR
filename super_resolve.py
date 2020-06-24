@@ -37,8 +37,8 @@ def main():
     gan.generator.load_weights('srgan_28-28-to-224-224.h5') # trained on vgg train
     # gan.generator.load_weights('/home/nbayat5/Desktop/srgan/saved_model/VGG_saved_model/VGG16to64.h5')
 
-    # root_path = "/imaging/nbayat/AR/LRFR_Pairs"
-    root_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/"
+    root_path = "/imaging/nbayat/AR/LRFR_Pairs"
+    # root_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/"
     for filename in os.listdir(root_path):
         parts = filename.split('-')
         if parts[len(parts)-1] == "1.jpg":

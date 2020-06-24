@@ -16,7 +16,7 @@ def compute_cosine(gallery_embedding, probe_embedding):
     return spatial.distance.cosine(gallery_embedding, probe_embedding)
 
 def compute_euclidean(gallery_embedding, probe_embedding):
-    return np.linalg.norm(gallery_embedding - probe_embedding)
+    return spatial.distance.euclidean(gallery_embedding, probe_embedding)
 
 
 def extract_inception_feature(aligner, facenet_preprocess, facenet, img_path):
@@ -35,7 +35,8 @@ def extract_inception_feature(aligner, facenet_preprocess, facenet, img_path):
     embeddings = temp.detach().numpy()
     return embeddings
 
-def compute_ranks(fake_path, hr_path, model="vggface"):
+
+def compute_ranks(fake_path, hr_path, model="inception_resnet"):
     hr_samples = pickle.load(open("{}_gallery_embeddings.pickle".format(model), "rb"))
     lr_samples = pickle.load(open("{}_probe_embeddings.pickle".format(model), "rb"))
 
@@ -47,9 +48,9 @@ def compute_ranks(fake_path, hr_path, model="vggface"):
         score = 0
         count = 0
         for filename in os.listdir(fake_path):
-            cosine_distances = []
+            distances = []
             hr_files = []
-            if filename in lr_samples.keys() and count < 100:
+            if filename in lr_samples.keys():
                 fake_embd = lr_samples[filename]
                 parts = filename.split('-')
                 parts[len(parts) - 1] = "14.jpg"
@@ -58,27 +59,26 @@ def compute_ranks(fake_path, hr_path, model="vggface"):
                     if hr_filename in hr_samples.keys():
                         hr_files.append(hr_filename)
                         hr_embd = hr_samples[hr_filename]
-                        cosine_distances.append(compute_cosine(hr_embd, fake_embd))
+                        distances.append(compute_cosine(hr_embd, fake_embd))
                 count += 1
 
-
-            indices = sorted(range(len(cosine_distances)), key=lambda i: cosine_distances[i])[:rank]
+            indices = sorted(range(len(distances)), key=lambda i: distances[i])[:rank]
             for index in indices:
                 if hr_files[index] == GT_filename:
                     score += 1
-        print("Rank {} score is: {} %".format(rank, (score/len(lr_samples.keys())*100) ))
+        print("Rank %d score is: %.2f " % (rank, (score/len(lr_samples.keys())*100)) + "%")
         scores.append(score)
 
     x = np.arange(1, 101)
-    plt.plot(x, scores, color="orange", label="SRGAN - {} model".format(model))
+    plt.plot(x, scores, color="orange", label="SRGAN")
     plt.xlabel("Rank")
     plt.ylabel("Cumulative Score")
     plt.title("Cumulative Match Characteristic for AR")
     plt.legend()
-    plt.savefig("Inception_ScoreRanksAR.png")
+    plt.savefig("AR_Ranks.png")
 
 
-def generate_embeddings(path, type="probe", model="vggface"):
+def generate_embeddings(path, type="probe", model="inception_resnet"):
     aligner = MTCNN(prewhiten=False, keep_all=True, thresholds=[0.6, 0.7, 0.9])
     facenet_preprocess = transforms.Compose([preprocessing.Whitening()])
     facenet = InceptionResnetV1(pretrained='vggface2').eval()
@@ -141,10 +141,11 @@ def main():
         fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_224"
         hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_224"
     else:
-        # fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
-        # hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
-        fake_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/fake_HR_224" # fake_HR_64 or fake_HR_224
-        hr_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/HR_224" # HR_64 or HR_224
+        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
+        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
+        # LFW
+        # fake_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/fake_HR_224"
+        # hr_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/HR_224"
 
     dump_data(fake_path, hr_path, model=model)
     compute_ranks(fake_path, hr_path, model=model)
