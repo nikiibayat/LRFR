@@ -59,7 +59,7 @@ def compute_ranks(fake_path, hr_path, model="inception_resnet"):
                     if hr_filename in hr_samples.keys():
                         hr_files.append(hr_filename)
                         hr_embd = hr_samples[hr_filename]
-                        distances.append(compute_cosine(hr_embd, fake_embd))
+                        distances.append(compute_euclidean(hr_embd, fake_embd))
                 count += 1
 
             indices = sorted(range(len(distances)), key=lambda i: distances[i])[:rank]
@@ -100,11 +100,10 @@ def generate_embeddings(path, type="probe", model="inception_resnet"):
                     embd = embd[0, :]
                 samples[filename] = embd.flatten()
 
-    pickle.dump(samples, open("{}_{}_embeddings.pickle".format(model, type), "wb"))
     return samples
 
 
-def dump_data(fake_path, hr_path, model="vggface"):
+def dump_data(fake_path, hr_path, model="inception_resnet"):
     lr_samples = generate_embeddings(fake_path, type="probe", model=model)
     hr_samples = generate_embeddings(hr_path, type="gallery", model=model)
 
@@ -137,15 +136,16 @@ def dump_data(fake_path, hr_path, model="vggface"):
 
 def main():
     model = "inception_resnet"
-    if model == "vggface":
-        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_224"
-        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_224"
-    else:
-        fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
-        hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
-        # LFW
-        # fake_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/fake_HR_224"
-        # hr_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/HR_224"
+    # for vggface the size must 224x224
+    """ AR """
+    # fake_path = "/imaging/nbayat/AR/LRFR_Pairs/fake_HR_64" # fake_HR_64 or fake_HR_224
+    # hr_path = "/imaging/nbayat/AR/LRFR_Pairs/HR_64" # HR_64 or HR_224
+    """ LFW """
+    # fake_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/fake_HR_64"
+    # hr_path = "/home/nbayat5/Desktop/LFW/LR_HR_pairs/HR_64"
+    """ CelebA """
+    fake_path = "/home/nbayat5/Desktop/celebA/LR_HR_pairs/fake_HR_64"
+    hr_path = "/home/nbayat5/Desktop/celebA/LR_HR_pairs/HR_64"
 
     dump_data(fake_path, hr_path, model=model)
     compute_ranks(fake_path, hr_path, model=model)

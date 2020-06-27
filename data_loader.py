@@ -30,28 +30,23 @@ def faceDetect(imgArray):
 
 
 def create_dataset(path, count):
-    scores = []
-    for idx, img_path in enumerate(path):
-        img = imageio.imread(img_path, pilmode='RGB')
-        scores.append(faceDetect(img))
-
-    gallery_index = scores.index(max(scores))
-    gallery_face = imageio.imread(path[gallery_index], pilmode='RGB')
-    path_parts = path[gallery_index].split("/")
-    identity = path_parts[len(path_parts) - 2]
-    gallery_id = path_parts[len(path_parts) - 1]
-    gallery_id2 = identity + "-14.jpg"
-    imageio.imwrite(os.path.join("../Desktop/LFW/LR_HR_pairs", gallery_id2), gallery_face)
-
-    while True:
-        random_index = random.randint(0, len(path) - 1)
-        if random_index != gallery_index:
-            break
-    probe_path = path[random_index]
-    probe_img = imageio.imread(probe_path, pilmode='RGB')
-    probe_path_parts = probe_path.split("/")
-    probe_id = probe_path_parts[len(probe_path_parts) - 2] + "-1.jpg"
-    imageio.imwrite(os.path.join("../Desktop/LFW/LR_HR_pairs", probe_id), probe_img)
+    try:
+        gallery_index, probe_index = random.sample(range(0, len(path) - 1), 2)
+        gallery_face = imageio.imread(path[gallery_index], pilmode='RGB')
+        path_parts = path[gallery_index].split("/")
+        identity = path_parts[len(path_parts) - 2].rstrip()
+        gallery_id = identity + '-14.jpg'
+        gallery_path = os.path.join("../Desktop/celebA/LR_HR_pairs", gallery_id)
+        if not os.path.exists(gallery_path):
+            print("gallery image ", gallery_path)
+            imageio.imwrite(gallery_path, gallery_face)
+            probe_path = path[probe_index]
+            probe_img = imageio.imread(probe_path, pilmode='RGB')
+            probe_path_parts = probe_path.split("/")
+            probe_id = probe_path_parts[len(probe_path_parts) - 2].rstrip() + '-1.jpg'
+            imageio.imwrite(os.path.join("../Desktop/celebA/LR_HR_pairs", probe_id), probe_img)
+    except:
+        return
 
 
 def create_AR_dataset():
@@ -81,7 +76,8 @@ def create_AR_dataset():
 
 def main():
 
-    root = "../Desktop/LFW/lfw-deepfunneled/"
+    root = "../Desktop/celebA/identities/"
+    # root = "../Desktop/LFW/lfw-deepfunneled/"
     count = 1
     for subdir, dirs, files in os.walk(root):
         for dir in dirs:
